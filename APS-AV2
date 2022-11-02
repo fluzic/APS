@@ -1,0 +1,73 @@
+import cv2
+from numpy.linalg import svd
+from PIL import Image
+import numpy as np
+from numpy import asarray
+import matplotlib.pyplot as plt
+import os
+from skimage import io
+from google.colab.patches import cv2_imshow
+
+
+def imagina_comprimida(img_name, img, k):
+    print("Carregando a imagem")
+
+    #canal de cores
+    r = img[:, :, 0]  # array para vermelho
+    g = img[:, :, 1]  # array para verde
+    b = img[:, :, 2]  # array para azul
+
+    print("Imagem sendo compactada")
+
+
+    ur, sr, vr = svd(r, full_matrices=False)
+    ug, sg, vg = svd(g, full_matrices=False)
+    ub, sb, vb = svd(b, full_matrices=False)
+
+
+    print('Canal r: {}'.format(r.shape))
+
+
+    rr = np.dot(ur[:, :k], np.dot(np.diag(sr[:k]), vr[:k, :]))
+    rg = np.dot(ug[:, :k], np.dot(np.diag(sg[:k]), vg[:k, :]))
+    rb = np.dot(ub[:, :k], np.dot(np.diag(sb[:k]), vb[:k, :]))
+
+    print("Criando imagem compactada")
+
+    
+    rimg = np.zeros(img.shape)
+    
+    #cores
+    rimg[:, :, 0] = rr 
+    rimg[:, :, 1] = rg
+    rimg[:, :, 2] = rb
+
+    
+    for ind1, row in enumerate(rimg): 
+        for ind2, col in enumerate(row): 
+            for ind3, value in enumerate(col):
+                if value < 0:
+                    rimg[ind1, ind2, ind3] = abs(value)
+                if value > 255:
+                    rimg[ind1, ind2, ind3] = 255
+
+
+    compressed_image = rimg.astype(np.uint8)
+
+
+    plt.title("Imagem compactada: " + img_name + "\n") #imagem já compactada
+    plt.imshow(compressed_image)
+    plt.axis('off')
+    plt.show()
+    cv2.imwrite("Imagem/comp-" + str(img_name) + ".jpg", compressed_image)
+
+
+origem = ("https://static-wp-tor15-prd.torcedores.com/wp-content/uploads/2018/07/Not%C3%ADcias-do-Fluminense1.jpg") #link da origem da imagem
+image = io.imread(origem)
+data = asarray(image)
+RGB_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+cv2_imshow(RGB_img)
+k = [60, 70, 80]
+for x in range(len(k)): #comprimento
+ compress_image("", image, k[x])
+ print(f'O valor da imagem em k atualmente é igual a: {k[x]}')
